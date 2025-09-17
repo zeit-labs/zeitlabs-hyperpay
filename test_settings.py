@@ -32,6 +32,7 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.messages',
     'django.contrib.sessions',
+    'django.contrib.sites',
     'hyperpay',
 )
 
@@ -44,18 +45,25 @@ ROOT_URLCONF = 'hyperpay.urls'
 SECRET_KEY = 'insecure-secret-key'
 
 MIDDLEWARE = (
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
 )
 
 TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
-    'APP_DIRS': False,
+    'DIRS': ['tests/templates'],
+    'APP_DIRS': True,
     'OPTIONS': {
         'context_processors': [
             'django.contrib.auth.context_processors.auth',  # this is required for admin
             'django.contrib.messages.context_processors.messages',  # this is required for admin
+            'django.template.context_processors.request'
         ],
     },
 }]
+
+# Avoid warnings about migrations
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+SITE_ID = 1
