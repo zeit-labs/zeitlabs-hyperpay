@@ -1,5 +1,5 @@
 """
-URLs for payfort.
+URLs for hyperpay.
 """
 from django.urls import re_path
 

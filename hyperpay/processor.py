@@ -1,5 +1,6 @@
+"""Hyperpay processor."""
+
 import logging
-import uuid
 from typing import Any, Optional
 from urllib.parse import urljoin
 
@@ -9,25 +10,26 @@ from django.middleware.csrf import get_token
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
-
-from zeitlabs_payments.models import Cart, Transaction
+from zeitlabs_payments import configuration_helpers
+from zeitlabs_payments.models import Cart
 from zeitlabs_payments.providers.base import BaseProcessor
+
 from hyperpay.client import HyperPayClient
 
 logger = logging.getLogger(__name__)
-
 
 
 class HyperPay(BaseProcessor):
     """
     HyperPay processor (business logic + Django integration).
     """
-
     SLUG = "hyperpay"
     CHECKOUT_TEXT = _("Checkout with HyperPay credit card")
     NAME = "HyperPay"
     BRAND = "VISA/MasterCard"
+
+    TRANSACTION_STATUS_PENDING = "pending"
+    TRANSACTION_STATUS_SUCCESS = "success"
 
     def __init__(self) -> None:
         """Initialize the HyperPay processor with client + config."""
@@ -54,19 +56,11 @@ class HyperPay(BaseProcessor):
         Build the required parameters for initiating a payment.
         """
         base_params = super().get_transaction_parameters_base(cart, request)
-        transaction = Transaction.objects.create(
-            cart=cart,
-            type=Transaction.TransactionType.PAYMENT,
-            status='Pending',
-            gateway=self.SLUG,
-            gateway_transaction_id=uuid.uuid4().hex[:12],
-            amount=base_params["amount"]/100,
-        )    
         checkout_payload = {
             "customer_email": base_params["user_email"],
             "payment_method": self.BRAND,
             "amount": str(base_params["amount"]),
-            "merchant_transaction_id": transaction.gateway_transaction_id
+            "merchant_transaction_id": base_params['order_reference'].zfill(8)
         }
         transaction_parameters = self.client.create_checkout(checkout_payload)
         checkout_id = transaction_parameters["checkout_id"]

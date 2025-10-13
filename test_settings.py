@@ -33,6 +33,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.sites',
+    'zeitlabs_payments',
     'hyperpay',
 )
 
@@ -40,7 +41,7 @@ LOCALE_PATHS = [
     root('hyperpay', 'conf', 'locale'),
 ]
 
-ROOT_URLCONF = 'hyperpay.urls'
+ROOT_URLCONF = 'tests.test_urls'
 
 SECRET_KEY = 'insecure-secret-key'
 
@@ -67,3 +68,13 @@ TEMPLATES = [{
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 SITE_ID = 1
+
+HYPERPAY_SETTINGS = {
+    'CLIENT_ID': 'fake-test-client',
+    'CLIENT_SECRET': 'fake-test-secret',
+    'NELC_API_URL': 'https://test-fake-api.nelc.gov.sa',
+    'PAYMENT_WIDGET_URL': 'https://fake.com/v1/paymentWidgets.js',
+}
+INVOICE_PREFIX = 'DEV'
+VALID_CURRENCY = 'SAR'
+ECOMMERCE_PUBLIC_URL_ROOT = 'test.ecommerce.com'
