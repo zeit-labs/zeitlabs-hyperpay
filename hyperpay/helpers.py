@@ -1,0 +1,48 @@
+import re
+from hyperpay.exceptions import HyperPayException
+from typing import Dict, Any
+from django.conf import settings
+from decimal import Decimal
+
+MANDATORY_FIELDS = [
+    'id', 'paymentType', 'paymentBrand', 'amount', 'currency',
+    'merchantTransactionId', 'result'
+]
+
+
+def verify_success_response_with_cart(response: Dict[str, Any], cart) -> None:
+    """
+    Verify the format of a HyperPay response.
+
+    :param response: The HyperPay response data.
+    :raises HyperPayException: If validation fails.
+    """
+
+    for field in MANDATORY_FIELDS:
+        if field not in response:
+            raise HyperPayException(f"Missing field in response: {field}")
+
+    amount = response['amount']
+    if cart.total != Decimal(amount):
+        raise HyperPayException(f"Cart total ({cart.total}) does not match response amount ({Decimal(amount)})")
+
+    if response['currency'] != settings.VALID_CURRENCY:
+        raise HyperPayException(f"Invalid currency: {response['currency']}")
+
+    result = response.get('result', {})
+    code = result.get('code')
+    if not code or not isinstance(code, str):
+        raise HyperPayException("Missing or invalid result.code")
+
+    card = response.get('card', {})
+    if card:
+        required_card_fields = ['bin', 'last4Digits', 'holder', 'expiryMonth', 'expiryYear']
+        for field in required_card_fields:
+            if field not in card:
+                raise HyperPayException(f"Missing card field: {field}")
+
+    response_items = response.get('cart', {}).get('items', [])
+    if len(response_items) != cart.items.count():
+        raise HyperPayException(
+            f"Mismatch in number of cart items: local={cart.items.count()}, response={len(response_items)}"
+        )
