@@ -1,0 +1,41 @@
+{% extends "main_django.html" %}
+{% load i18n static %}
+
+{% block body %}
+<style>
+    .centered-content {
+        text-align: center;
+        margin-top: 2em;
+    }
+</style>
+
+<div class="centered-content">
+    <h1>{% trans "Payment" %}</h1>
+</div>
+
+<meta http-equiv="Content-Security-Policy"
+      content="
+        style-src 'self' https://eu-test.oppwa.com 'unsafe-inline';
+        frame-src 'self' https://eu-test.oppwa.com;
+        script-src 'self' https://eu-test.oppwa.com 'nonce-{{ transaction_parameters.nonce_id }}';
+        connect-src 'self' https://eu-test.oppwa.com;
+        img-src 'self' https://eu-test.oppwa.com;">
+
+<script 
+    src="{{ transaction_parameters.payment_page_url }}"
+    integrity="{{ transaction_parameters.integrity }}"
+    crossorigin="anonymous">
+</script>
+
+<script nonce="{{ transaction_parameters.nonce_id }}">
+    var wpwlOptions = {
+        style: 'card',
+    };
+</script>
+
+<form action="{{ transaction_parameters.return_url }}" 
+      class="paymentWidgets" 
+      data-brands="{{ transaction_parameters.brands }}">
+</form>
+
+{% endblock %}
