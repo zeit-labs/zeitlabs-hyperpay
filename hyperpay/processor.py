@@ -5,13 +5,14 @@ from typing import Any, Optional
 from urllib.parse import urljoin
 
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.http import HttpRequest, HttpResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from zeitlabs_payments import configuration_helpers
-from zeitlabs_payments.exceptions import InvalidCartError
+from zeitlabs_payments.exceptions import GatewayError, InvalidCartError
 from zeitlabs_payments.models import AuditLog, Cart
 from zeitlabs_payments.providers.base import BaseProcessor
 
@@ -137,4 +138,14 @@ class HyperPay(BaseProcessor):
                     'required_cart_state': Cart.Status.PROCESSING
                 }
             )
+            return None
+
+    def get_site_from_reference(self, reference: str) -> Optional[Site]:
+        """Get site from reference which should be in format siteID-cartID."""
+        try:
+            site_id_str, _ = reference.split('-')
+            site_id = int(site_id_str)
+            return self.get_site(site_id)
+        except (ValueError, GatewayError):
+            logger.error(f'Payfort Error! merchant_reference: {reference} is invalid. Unable to extract site.')
             return None
