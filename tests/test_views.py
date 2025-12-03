@@ -77,7 +77,7 @@ class HyperPayStatusViewTest(TestCase):
         self.response_template = {
             'id': '11223344',
             'paymentBrand': 'VISA',
-            'merchantTransactionId': f'0011-{self.processing_cart.id}',
+            'merchantTransactionId': f'0001-{self.processing_cart.id}',
             'amount': '100.00',
             'currency': 'SAR',
             'result': {'code': '000.100.110', 'description': 'successfully processed'},
@@ -149,6 +149,20 @@ class HyperPayStatusViewTest(TestCase):
             'Cart status should be PAID after successful payment'
 
     @pytest.mark.django_db
+    @patch("hyperpay.client.requests.get")
+    def test_get_success_with_invalid_response_total_amount_mismatched(self, mock_get):
+        self.client.force_login(self.user)
+        mock_response = Mock()
+        mock_response.raise_for_status = Mock()
+        mock_response.json.return_value = deepcopy(self.response_template)
+        mock_response.json.return_value['amount'] = 'invalid'
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+        response = self.client.get(f'{self.url}?merchant_reference=1122')
+        assert response.status_code == 200
+        self.assertTemplateUsed(response, 'zeitlabs_payments/payment_error.html')
+
+    @pytest.mark.django_db
     @patch("hyperpay.client.HyperPayClient.get_checkout_status")
     def test_get_success_for_failed_payment(self, mock_checkout_status):
         self.client.force_login(self.user)
@@ -163,8 +177,18 @@ class HyperPayStatusViewTest(TestCase):
     def test_get_success_for_pending_payment(self, mock_checkout_status):
         self.client.force_login(self.user)
         response_data = deepcopy(self.response_template)
+
+        # test when cart is in processing state and hyperpay response is pending
         response_data['result'] = {'code': '000.200.100', 'description': 'pending repsonse'}
         mock_checkout_status.return_value = response_data
+        response = self.client.get(f'{self.url}?merchant_reference=1122')
+        assert response.status_code == 202
+        assert response.json()['error'] == 'Payment status is still pending on Hyperpay.'
+        self.processing_cart.refresh_from_db()
+        assert self.processing_cart.status == Cart.Status.PAYMENT_PENDING, \
+            'Cart status should be PENDING PAYMENT.'
+
+        # test when cart is in payment_pending state and hyperpay response is still pending
         response = self.client.get(f'{self.url}?merchant_reference=1122')
         assert response.status_code == 202
         assert response.json()['error'] == 'Payment status is still pending on Hyperpay.'

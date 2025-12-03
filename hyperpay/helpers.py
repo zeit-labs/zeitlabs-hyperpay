@@ -1,6 +1,6 @@
 """Helpers for Hyperpay."""
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any, Dict
 
 from django.conf import settings
@@ -26,8 +26,16 @@ def verify_success_response_with_cart(response: Dict[str, Any], cart: Cart) -> N
             raise HyperPayException(f"Missing field in response: {field}")
 
     amount = response['amount']
-    if cart.total != Decimal(amount):
-        raise HyperPayException(f"Cart total ({cart.total}) does not match response amount ({Decimal(amount)})")
+    try:
+        amount_decimal = Decimal(amount)
+        if cart.total != amount_decimal:
+            raise HyperPayException(
+                f'Cart total ({cart.total}) does not match response amount ({amount_decimal})'
+            )
+    except (InvalidOperation, Exception) as exc:
+        raise HyperPayException(
+            f'Error comparing cart total in response with cart total: {cart.total}. Amount received: {amount}'
+        ) from exc
 
     if response['currency'] != settings.VALID_CURRENCY:
         raise HyperPayException(f"Invalid currency: {response['currency']}")
