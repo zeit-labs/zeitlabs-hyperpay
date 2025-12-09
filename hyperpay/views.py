@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
+from zeitlabs_payments.models import Cart
 
 from hyperpay.client import PaymentStatus
 from hyperpay.exceptions import HyperPayException
@@ -84,6 +85,14 @@ class HyperPayStatusView(LoginRequiredMixin, HyperPayBaseView):
         checkout_id = request.GET.get('merchant_reference')
         try:
             data = self.payment_processor.client.get_checkout_status(checkout_id)
+            cart = self.payment_processor.get_cart_from_reference(data['merchantTransactionId'])
+            site = self.payment_processor.get_site_from_reference(data['merchantTransactionId'])
+            if not cart or not site:
+                return render(request, 'zeitlabs_payments/payment_error.html')
+
+            if cart.status == Cart.Status.PROCESSING:
+                cart.status = Cart.Status.PAYMENT_PENDING
+                cart.save(update_fields=['status'])
         except HyperPayException as exc:
             logger.exception(
                 f'Unable to verify checkout status from HyperPay with given checkout_id: {checkout_id} - {exc}'
@@ -98,10 +107,6 @@ class HyperPayStatusView(LoginRequiredMixin, HyperPayBaseView):
             return render(request, 'zeitlabs_payments/payment_error.html')
 
         elif status == PaymentStatus.SUCCESS:
-            cart = self.payment_processor.get_cart_from_reference(data['merchantTransactionId'])
-            if not cart:
-                return render(request, 'zeitlabs_payments/payment_error.html')
-
             try:
                 verify_success_response_with_cart(data, cart)
             except HyperPayException:
@@ -119,6 +124,7 @@ class HyperPayStatusView(LoginRequiredMixin, HyperPayBaseView):
                 currency=data['currency'],
                 reason=data['result']['description'],
                 record_webhook_event=False,
+                site_id=site.id
             )
             if invoice:
                 return JsonResponse({
