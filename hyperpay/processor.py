@@ -11,8 +11,8 @@ from django.middleware.csrf import get_token
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from zeitlabs_payments import configuration_helpers
 from zeitlabs_payments.exceptions import GatewayError, InvalidCartError
+from zeitlabs_payments.helpers import get_settings
 from zeitlabs_payments.models import AuditLog, Cart
 from zeitlabs_payments.providers.base import BaseProcessor
 
@@ -43,10 +43,7 @@ class HyperPay(BaseProcessor):
             slug=self.SLUG
         )
         self.payment_url = f"{settings.HYPERPAY_SETTINGS['API_URL']}/v1/paymentWidgets.js"
-        self.return_url = urljoin(
-            configuration_helpers.get_value("LMS_ROOT_URL", settings.ECOMMERCE_PUBLIC_URL_ROOT),
-            reverse("hyperpay:return"),
-        )
+        self.return_url = urljoin(get_settings().root_url, reverse("hyperpay:return"))
 
     def get_cart_data(self, cart: Cart) -> dict:
         """Return cart items details."""

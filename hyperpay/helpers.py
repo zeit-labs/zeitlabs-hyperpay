@@ -3,7 +3,7 @@
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict
 
-from django.conf import settings
+from zeitlabs_payments.helpers import get_settings
 from zeitlabs_payments.models import Cart
 
 from hyperpay.exceptions import HyperPayException
@@ -37,7 +37,7 @@ def verify_success_response_with_cart(response: Dict[str, Any], cart: Cart) -> N
             f'Error comparing cart total in response with cart total: {cart.total}. Amount received: {amount}'
         ) from exc
 
-    if response['currency'] != settings.VALID_CURRENCY:
+    if response['currency'] != get_settings().valid_currency:
         raise HyperPayException(f"Invalid currency: {response['currency']}")
 
     result = response.get('result', {})

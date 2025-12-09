@@ -39,12 +39,12 @@ class TestHyperPayProcessor(TestCase):
         self.fake_request.build_absolute_uri.return_value = 'https://example.com'
         self.fake_request.site = Site.objects.get(domain='example.com')
 
-    @patch('hyperpay.processor.configuration_helpers.get_value')
+    @patch('hyperpay.processor.get_settings')
     @patch('hyperpay.processor.reverse')
     def test_init_sets_attributes(self, mock_reverse, mock_get_value):
         """Test Hyperpay __init__ properly sets attributes from settings and URL helpers."""
         mock_reverse.return_value = '/hyperpay/return/'
-        mock_get_value.return_value = 'https://lms.example.com'
+        mock_get_value.return_value = MagicMock(root_url='https://lms.example.com')
         processor = HyperPay()
         assert processor.client.base_url == 'https://test-fake-api.nelc.gov.sa'
         assert processor.client.slug == 'hyperpay'
