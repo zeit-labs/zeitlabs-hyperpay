@@ -30,7 +30,7 @@ def test_successful_response(cart):  # pylint: disable=redefined-outer-name
     }
     response.update({
         'amount': '100.00',
-        'currency': settings.VALID_CURRENCY,
+        'currency': settings.ZEITLABS_PAYMENTS_SETTINGS['valid_currency'],
         'result': {'code': '000.100.110'},
         'card': {
             'bin': '411111',
@@ -59,7 +59,7 @@ def test_amount_mismatch(cart):  # pylint: disable=redefined-outer-name
     }
     response.update({
         'amount': '200.00',
-        'currency': settings.VALID_CURRENCY,
+        'currency': settings.ZEITLABS_PAYMENTS_SETTINGS['valid_currency'],
         'result': {'code': '000.100.110'},
         'cart': {'items': [1]},
     })
@@ -90,7 +90,7 @@ def test_missing_result_code(cart):  # pylint: disable=redefined-outer-name
     }
     response.update({
         'amount': '100.00',
-        'currency': settings.VALID_CURRENCY,
+        'currency': settings.ZEITLABS_PAYMENTS_SETTINGS['valid_currency'],
         'result': {},  # missing code
         'cart': {'items': [1]},
     })
@@ -105,7 +105,7 @@ def test_missing_card_field(cart):  # pylint: disable=redefined-outer-name
     }
     response.update({
         'amount': '100.00',
-        'currency': settings.VALID_CURRENCY,
+        'currency': settings.ZEITLABS_PAYMENTS_SETTINGS['valid_currency'],
         'result': {'code': '000.100.110'},
         'card': {'bin': '411111'},  # missing required fields
         'cart': {'items': [1]},
@@ -121,7 +121,7 @@ def test_cart_items_count_mismatch(cart):  # pylint: disable=redefined-outer-nam
     }
     response.update({
         'amount': '100.00',
-        'currency': settings.VALID_CURRENCY,
+        'currency': settings.ZEITLABS_PAYMENTS_SETTINGS['valid_currency'],
         'result': {'code': '000.100.110'},
         'cart': {'items': [1, 2]},  # only 2 items, cart has 1
     })
