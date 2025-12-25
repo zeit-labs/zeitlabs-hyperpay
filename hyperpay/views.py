@@ -104,8 +104,15 @@ class HyperPayStatusView(LoginRequiredMixin, HyperPayBaseView):
             logger.exception(
                 f'Received failed response from hyperpay: {data}'
             )
-            return render(request, 'zeitlabs_payments/payment_error.html')
-
+            cart.status = Cart.Status.CANCELLED
+            cart.save(update_fields=['status'])
+            return JsonResponse(
+                {
+                    'error': (
+                        'Your payment was declined. No charges were made. '
+                        'You may try again or use a different payment method.'
+                    )
+                }, status=400)
         elif status == PaymentStatus.SUCCESS:
             try:
                 verify_success_response_with_cart(data, cart)

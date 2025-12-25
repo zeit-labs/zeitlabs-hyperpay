@@ -5,15 +5,12 @@ from typing import Any, Optional
 from urllib.parse import urljoin
 
 from django.conf import settings
-from django.contrib.sites.models import Site
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest
 from django.middleware.csrf import get_token
-from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from zeitlabs_payments.exceptions import GatewayError, InvalidCartError
 from zeitlabs_payments.helpers import get_settings
-from zeitlabs_payments.models import AuditLog, Cart
+from zeitlabs_payments.models import Cart
 from zeitlabs_payments.providers.base import BaseProcessor
 
 from hyperpay.client import HyperPayClient
@@ -25,13 +22,12 @@ class HyperPay(BaseProcessor):
     """
     HyperPay processor (business logic + Django integration).
     """
-    SLUG = "hyperpay"
-    CHECKOUT_TEXT = _("Checkout with HyperPay credit card")
-    NAME = "HyperPay"
-    BRANDS = "VISA MASTER"
+    SLUG = 'hyperpay'
+    CHECKOUT_TEXT = _('Checkout with HyperPay credit card')
+    NAME = 'HyperPay'
+    BRANDS = 'VISA MASTER'
 
-    TRANSACTION_STATUS_PENDING = "pending"
-    TRANSACTION_STATUS_SUCCESS = "success"
+    TEMPLATE_NAME = 'hyperpay/hyperpay.html'
 
     def __init__(self) -> None:
         """Initialize the HyperPay processor with client + config."""
@@ -91,58 +87,3 @@ class HyperPay(BaseProcessor):
             }
         )
         return transaction_parameters
-
-    def payment_view(
-        self,
-        cart: Cart,
-        request: Optional[HttpRequest] = None,
-        use_client_side_checkout: bool = False,
-        **kwargs: Any,
-    ) -> HttpResponse:
-        """
-        Render the payment redirection view.
-        """
-        try:
-            transaction_parameters = self.get_transaction_parameters(
-                cart=cart,
-                request=request,
-                use_client_side_checkout=use_client_side_checkout,
-                **kwargs,
-            )
-        except Exception:  # pylint: disable=broad-exception-caught
-            return render(request, 'zeitlabs_payments/payment_error.html')
-        return render(
-            request,
-            f"hyperpay/{self.SLUG}.html",
-            {"transaction_parameters": transaction_parameters},
-        )
-
-    def get_cart_from_reference(self, reference: str) -> Optional[Cart]:
-        """Get cart from reference which should be in format siteID-cartID."""
-        try:
-            _, cart_id = reference.split('-')
-            return self.get_cart(cart_id)
-        except (ValueError, InvalidCartError):
-            AuditLog.log(
-                action=AuditLog.AuditActions.RESPONSE_INVALID_CART,
-                cart=None,
-                gateway=self.SLUG,
-                context={
-                    'cart_status': (
-                        f"None, unable to retrieve cart from merchant transaction "
-                        f"id {reference}"
-                    ),
-                    'required_cart_state': Cart.Status.PROCESSING
-                }
-            )
-            return None
-
-    def get_site_from_reference(self, reference: str) -> Optional[Site]:
-        """Get site from reference which should be in format siteID-cartID."""
-        try:
-            site_id_str, _ = reference.split('-')
-            site_id = int(site_id_str)
-            return self.get_site(site_id)
-        except (ValueError, GatewayError):
-            logger.error(f'Payfort Error! merchant_reference: {reference} is invalid. Unable to extract site.')
-            return None
