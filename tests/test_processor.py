@@ -95,44 +95,6 @@ class TestHyperPayProcessor(TestCase):
         assert result["payment_page_url"].startswith(processor.payment_url)
         assert result["csrfmiddlewaretoken"] == "csrf123"
 
-    @patch("hyperpay.processor.render")
-    @patch.object(HyperPay, "get_transaction_parameters")
-    def test_payment_view_renders_template_with_correct_context(
-        self, mock_get_transaction_parameters, mock_render
-    ):
-        """Test payment_view calls get_transaction_parameters and renders with correct context."""
-        mock_get_transaction_parameters.return_value = {
-            "checkout_id": "chk_123",
-            "payment_page_url": "https://fake.com/widget?checkoutId=chk_123",
-            "return_url": "https://example.com/return",
-        }
-        processor = HyperPay()
-        processor.payment_view(cart=self.cart, request=self.fake_request)
-        mock_get_transaction_parameters.assert_called_once_with(
-            cart=self.cart,
-            request=self.fake_request,
-            use_client_side_checkout=False,
-        )
-        mock_render.assert_called_once_with(
-            self.fake_request,
-            "hyperpay/hyperpay.html",
-            {"transaction_parameters": mock_get_transaction_parameters.return_value},
-        )
-
-    @patch("hyperpay.processor.render")
-    @patch.object(HyperPay, "get_transaction_parameters")
-    def test_payment_view_for_exception(
-        self, mock_get_transaction_parameters, mock_render
-    ):
-        """Test payment_view calls get_transaction_parameters and renders with correct context."""
-        mock_get_transaction_parameters.side_effect = Exception('unexpected error.')
-        processor = HyperPay()
-        processor.payment_view(cart=self.cart, request=self.fake_request)
-        mock_render.assert_called_once_with(
-            self.fake_request,
-            'zeitlabs_payments/payment_error.html'
-        )
-
     def test_get_cart_from_reference_success(self):
         reference = f'0011-{self.cart.id}'
         processor = HyperPay()

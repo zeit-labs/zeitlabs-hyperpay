@@ -72,6 +72,7 @@ class HyperPayStatusViewTest(TestCase):
         )
         self.unknown_cart = Cart.objects.create(user=self.user, status='UNKNOWN')
         self.paid_cart = Cart.objects.create(user=self.user, status=Cart.Status.PAID)
+        self.payment_pending_cart = Cart.objects.create(user=self.user, status=Cart.Status.PAYMENT_PENDING)
         self.url = reverse('hyperpay:status')
 
         self.response_template = {
@@ -170,7 +171,13 @@ class HyperPayStatusViewTest(TestCase):
         response_data['result'] = {'code': '000.400.010', 'description': 'failed repsonse'}
         mock_checkout_status.return_value = response_data
         response = self.client.get(f'{self.url}?merchant_reference=1122')
-        self.assertTemplateUsed(response, 'zeitlabs_payments/payment_error.html')
+        assert response.status_code == 400
+        assert response.json()['error'] == (
+            'Your payment was declined. No charges were made. '
+            'You may try again or use a different payment method.'
+        )
+        self.processing_cart.refresh_from_db()
+        assert self.processing_cart.status == Cart.Status.CANCELLED
 
     @pytest.mark.django_db
     @patch("hyperpay.client.HyperPayClient.get_checkout_status")
@@ -192,6 +199,8 @@ class HyperPayStatusViewTest(TestCase):
         response = self.client.get(f'{self.url}?merchant_reference=1122')
         assert response.status_code == 202
         assert response.json()['error'] == 'Payment status is still pending on Hyperpay.'
+        self.processing_cart.refresh_from_db()
+        assert self.processing_cart.status == Cart.Status.PAYMENT_PENDING
 
     @pytest.mark.django_db
     @patch("hyperpay.client.HyperPayClient.get_checkout_status")
