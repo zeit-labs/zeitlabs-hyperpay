@@ -75,6 +75,8 @@ HYPERPAY_SETTINGS = {
     'TEST_MODE': 'EXTERNAL',
     'API_URL': 'https://test-fake-api.nelc.gov.sa',
 }
-INVOICE_PREFIX = 'DEV'
-VALID_CURRENCY = 'SAR'
 ECOMMERCE_PUBLIC_URL_ROOT = 'test.ecommerce.com'
+ZEITLABS_PAYMENTS_SETTINGS = {
+    'invoice_prefix': 'DEV',
+    'valid_currency': 'SAR',
+}
