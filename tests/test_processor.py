@@ -38,6 +38,7 @@ class TestHyperPayProcessor(TestCase):
         self.fake_request = MagicMock(spec=HttpRequest)
         self.fake_request.build_absolute_uri.return_value = 'https://example.com'
         self.fake_request.site = Site.objects.get(domain='example.com')
+        self.fake_request.LANGUAGE_CODE = 'en'
 
     @patch('hyperpay.processor.get_settings')
     @patch('hyperpay.processor.reverse')
