@@ -84,6 +84,7 @@ class HyperPay(BaseProcessor):
                 'payment_page_url': f'{self.payment_url}?checkoutId={checkout_id}',
                 'csrfmiddlewaretoken': get_token(request),
                 'brands': self.BRANDS,
+                'locale': request.LANGUAGE_CODE if request else 'en',
             }
         )
         return transaction_parameters
