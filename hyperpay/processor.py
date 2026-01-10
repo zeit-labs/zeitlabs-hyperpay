@@ -23,7 +23,7 @@ class HyperPay(BaseProcessor):
     HyperPay processor (business logic + Django integration).
     """
     SLUG = 'hyperpay'
-    CHECKOUT_TEXT = _('Checkout with HyperPay credit card')
+    CHECKOUT_TEXT = _('Checkout with HyperPay Credit Card')
     NAME = 'HyperPay'
     BRANDS = 'VISA MASTER'
 
@@ -84,6 +84,17 @@ class HyperPay(BaseProcessor):
                 'payment_page_url': f'{self.payment_url}?checkoutId={checkout_id}',
                 'csrfmiddlewaretoken': get_token(request),
                 'brands': self.BRANDS,
+                'locale': request.LANGUAGE_CODE if request else 'en',
             }
         )
         return transaction_parameters
+
+
+class HyperPayMada(HyperPay):
+    """
+    HyperPay Mada processor (business logic + Django integration).
+    """
+    SLUG = 'hyperpay_mada'
+    CHECKOUT_TEXT = _('Checkout with HyperPay Mada')
+    NAME = 'HyperPay Mada'
+    BRANDS = 'MADA'

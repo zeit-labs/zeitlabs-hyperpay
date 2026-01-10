@@ -164,6 +164,7 @@ setup(
         ],
         'zeitlabs_payments.v1': [
             'hyperpay = hyperpay.processor:HyperPay',
+            'hyperpay_mada = hyperpay.processor:HyperPayMada',
         ]
     },
 )
