@@ -1,0 +1,25 @@
+# Arabic translations for zeitlabs-hyperpay.
+# Copyright (C) 2026 Zeit Labs
+# This file is distributed under the same license as the zeitlabs-hyperpay package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: zeitlabs-hyperpay 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-12 00:00+0000\n"
+"PO-Revision-Date: 2026-01-12 00:00+0000\n"
+"Last-Translator: Zeit Labs <support@zeitlabs.com>\n"
+"Language-Team: Arabic <ar@zeitlabs.com>\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+
+#: hyperpay/processor.py:26
+msgid "Checkout with HyperPay credit card"
+msgstr "الدفع عبر بطاقة هايبر باي الائتمانية"
+
+#: hyperpay/templates/hyperpay/hyperpay.html:13
+msgid "Payment"
+msgstr "الدفع"
