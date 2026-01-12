@@ -21,7 +21,7 @@
         connect-src 'self' https://eu-test.oppwa.com;
         img-src 'self' https://eu-test.oppwa.com;">
 
-<script 
+<script
     src="{{ transaction_parameters.payment_page_url }}"
     integrity="{{ transaction_parameters.integrity }}"
     crossorigin="anonymous">
@@ -29,13 +29,27 @@
 
 <script nonce="{{ transaction_parameters.nonce_id }}">
     var wpwlOptions = {
-        style: 'card',
+      style: 'logos',
+      brandDetection: true,
+      brandDetectionType: 'binlist',
+      locale: "{{ transaction_parameters.locale }}",
+      maskCvv: true,
+      billingAddress: {},
+      mandatoryBillingFields: {
+        country: true,
+        state: true,
+        city: true,
+        postcode: true,
+        street1: true,
+        street2: false
+      }
     };
 </script>
 
-<form action="{{ transaction_parameters.return_url }}" 
-      class="paymentWidgets" 
+<form action="{{ transaction_parameters.return_url }}"
+      class="paymentWidgets"
       data-brands="{{ transaction_parameters.brands }}">
+    <input type="hidden" name="locale" value="ar">
 </form>
 
 {% endblock %}

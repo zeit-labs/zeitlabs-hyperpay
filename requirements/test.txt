@@ -4,6 +4,7 @@
 #
 #    pip-compile --output-file=requirements/test.txt requirements/test.in
 #
+Babel==2.15.0
 asgiref==3.9.1
     # via django
 certifi==2025.10.5
