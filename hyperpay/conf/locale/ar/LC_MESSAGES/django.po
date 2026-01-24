@@ -16,10 +16,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
 
-#: hyperpay/processor.py:26
-msgid "Checkout with HyperPay credit card"
-msgstr "الدفع عبر بطاقة هايبر باي الائتمانية"
+#: processor.py:26
+msgid "Checkout with HyperPay Credit Card"
+msgstr "الدفع عبر هايبر باي بطاقة الائتمان"
 
-#: hyperpay/templates/hyperpay/hyperpay.html:13
+#: processor.py:98
+msgid "Checkout with HyperPay Mada"
+msgstr "الدفع عبر هايبر باي مدى"
+
+#: templates/hyperpay/hyperpay.html:13
 msgid "Payment"
 msgstr "الدفع"
