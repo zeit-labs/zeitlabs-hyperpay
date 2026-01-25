@@ -11,3 +11,9 @@ def plugin_settings(settings: Any) -> None:
         'HYPERPAY_SETTINGS',
         {},
     )
+
+    settings.HYPERPAY_MADA_SETTINGS = getattr(
+        settings,
+        'HYPERPAY_MADA_SETTINGS',
+        {},
+    )

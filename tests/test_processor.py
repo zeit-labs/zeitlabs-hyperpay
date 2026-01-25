@@ -2,13 +2,14 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.http import HttpRequest
 from django.test import TestCase
 from zeitlabs_payments.models import AuditLog, Cart, CatalogueItem
 
-from hyperpay.processor import HyperPay
+from hyperpay.processor import HyperPay, HyperPayMada
 
 User = get_user_model()
 
@@ -40,7 +41,7 @@ class TestHyperPayProcessor(TestCase):
         self.fake_request.site = Site.objects.get(domain='example.com')
         self.fake_request.LANGUAGE_CODE = 'en'
 
-    @patch('hyperpay.processor.get_settings')
+    @patch('hyperpay.processor.zeitlabs_payments_settings')
     @patch('hyperpay.processor.reverse')
     def test_init_sets_attributes(self, mock_reverse, mock_get_value):
         """Test Hyperpay __init__ properly sets attributes from settings and URL helpers."""
@@ -112,3 +113,23 @@ class TestHyperPayProcessor(TestCase):
         assert AuditLog.objects.filter(
             gateway='hyperpay', action=AuditLog.AuditActions.RESPONSE_INVALID_CART
         ).exists()
+
+
+def test_mada_processor_class():
+    """verify that HyperPayMada is a subclass of HyperPay with correct attributes."""
+    assert issubclass(HyperPayMada, HyperPay)
+    assert HyperPayMada.SLUG == 'hyperpay_mada'
+    assert HyperPayMada.NAME == 'HyperPay Mada'
+
+    assert not any(value.startswith('mada-') for value in settings.HYPERPAY_SETTINGS.values())
+
+    assert all((value.startswith('mada-') for value in settings.HYPERPAY_MADA_SETTINGS.values()))
+
+
+def test_mada_processor_settings():
+    """verify that HyperPayMada uses the correct settings."""
+    assert not any(value.startswith('mada-') for value in settings.HYPERPAY_SETTINGS.values())
+    assert all((value.startswith('mada-') for value in settings.HYPERPAY_MADA_SETTINGS.values()))
+
+    mada_processor = HyperPayMada()
+    assert all((value.startswith('mada-') for value in mada_processor.get_processor_settings().values()))

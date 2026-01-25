@@ -75,6 +75,12 @@ HYPERPAY_SETTINGS = {
     'TEST_MODE': 'EXTERNAL',
     'API_URL': 'https://test-fake-api.nelc.gov.sa',
 }
+HYPERPAY_MADA_SETTINGS = {
+    'ACCESS_TOKEN': 'mada-fake-test',
+    'ENTITY_ID': 'mada-12345',
+    'TEST_MODE': 'mada-EXTERNAL',
+    'API_URL': 'mada-https://test-fake-api.nelc.gov.sa',
+}
 ECOMMERCE_PUBLIC_URL_ROOT = 'test.ecommerce.com'
 ZEITLABS_PAYMENTS_SETTINGS = {
     'invoice_prefix': 'DEV',
