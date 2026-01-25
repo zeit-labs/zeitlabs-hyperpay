@@ -9,7 +9,7 @@ from django.http import HttpRequest
 from django.middleware.csrf import get_token
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from zeitlabs_payments.helpers import get_settings
+from zeitlabs_payments.helpers import get_settings as zeitlabs_payments_settings
 from zeitlabs_payments.models import Cart
 from zeitlabs_payments.providers.base import BaseProcessor
 
@@ -32,14 +32,28 @@ class HyperPay(BaseProcessor):
     def __init__(self) -> None:
         """Initialize the HyperPay processor with client + config."""
         self.client = HyperPayClient(
-            access_token=settings.HYPERPAY_SETTINGS['ACCESS_TOKEN'],
-            base_url=settings.HYPERPAY_SETTINGS['API_URL'],
-            entity_id=settings.HYPERPAY_SETTINGS['ENTITY_ID'],
-            test_mode=settings.HYPERPAY_SETTINGS.get('TEST_MODE'),
+            access_token=self.processor_settings['access_token'],
+            base_url=self.processor_settings['base_url'],
+            entity_id=self.processor_settings['entity_id'],
+            test_mode=self.processor_settings.get('test_mode'),
             slug=self.SLUG
         )
         self.payment_url = f"{settings.HYPERPAY_SETTINGS['API_URL']}/v1/paymentWidgets.js"
-        self.return_url = urljoin(get_settings().root_url, reverse("hyperpay:return"))
+        self.return_url = urljoin(zeitlabs_payments_settings().root_url, reverse("hyperpay:return"))
+
+    def get_processor_settings(self) -> dict:  # pylint: disable=self-use-argument
+        """Return processor settings."""
+        return {
+            'access_token': settings.HYPERPAY_SETTINGS['ACCESS_TOKEN'],
+            'base_url': settings.HYPERPAY_SETTINGS['API_URL'],
+            'entity_id': settings.HYPERPAY_SETTINGS['ENTITY_ID'],
+            'test_mode': settings.HYPERPAY_SETTINGS.get('TEST_MODE'),
+        }
+
+    @property
+    def processor_settings(self) -> dict:
+        """Return processor settings property."""
+        return self.get_processor_settings()
 
     def get_cart_data(self, cart: Cart) -> dict:
         """Return cart items details."""
@@ -91,10 +105,17 @@ class HyperPay(BaseProcessor):
 
 
 class HyperPayMada(HyperPay):
-    """
-    HyperPay Mada processor (business logic + Django integration).
-    """
+    """HyperPay Mada processor."""
     SLUG = 'hyperpay_mada'
     CHECKOUT_TEXT = _('Checkout with HyperPay Mada')
     NAME = 'HyperPay Mada'
     BRANDS = 'MADA'
+
+    def get_processor_settings(self) -> dict:  # pylint: disable=self-use-argument
+        """Return processor settings."""
+        return {
+            'access_token': settings.HYPERPAY_MADA_SETTINGS['ACCESS_TOKEN'],
+            'base_url': settings.HYPERPAY_MADA_SETTINGS['API_URL'],
+            'entity_id': settings.HYPERPAY_MADA_SETTINGS['ENTITY_ID'],
+            'test_mode': settings.HYPERPAY_MADA_SETTINGS.get('TEST_MODE'),
+        }
