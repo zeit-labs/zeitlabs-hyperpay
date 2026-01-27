@@ -16,6 +16,12 @@ from zeitlabs_payments.providers.base import BaseProcessor
 from hyperpay.client import HyperPayClient
 
 logger = logging.getLogger(__name__)
+empty_hyperpay_settings = {
+    'ACCESS_TOKEN': '',
+    'API_URL': '',
+    'ENTITY_ID': '',
+    'TEST_MODE': '',
+}
 
 
 class HyperPay(BaseProcessor):
@@ -43,11 +49,12 @@ class HyperPay(BaseProcessor):
 
     def get_processor_settings(self) -> dict:  # pylint: disable=self-use-argument
         """Return processor settings."""
+        processor_settings = zeitlabs_payments_settings().get_by_root_key('HYPERPAY_SETTINGS', empty_hyperpay_settings)
         return {
-            'access_token': settings.HYPERPAY_SETTINGS['ACCESS_TOKEN'],
-            'base_url': settings.HYPERPAY_SETTINGS['API_URL'],
-            'entity_id': settings.HYPERPAY_SETTINGS['ENTITY_ID'],
-            'test_mode': settings.HYPERPAY_SETTINGS.get('TEST_MODE'),
+            'access_token': processor_settings['ACCESS_TOKEN'],
+            'base_url': processor_settings['API_URL'],
+            'entity_id': processor_settings['ENTITY_ID'],
+            'test_mode': processor_settings.get('TEST_MODE'),
         }
 
     @property
@@ -113,9 +120,12 @@ class HyperPayMada(HyperPay):
 
     def get_processor_settings(self) -> dict:  # pylint: disable=self-use-argument
         """Return processor settings."""
+        processor_settings = zeitlabs_payments_settings().get_by_root_key(
+            'HYPERPAY_MADA_SETTINGS', empty_hyperpay_settings,
+        )
         return {
-            'access_token': settings.HYPERPAY_MADA_SETTINGS['ACCESS_TOKEN'],
-            'base_url': settings.HYPERPAY_MADA_SETTINGS['API_URL'],
-            'entity_id': settings.HYPERPAY_MADA_SETTINGS['ENTITY_ID'],
-            'test_mode': settings.HYPERPAY_MADA_SETTINGS.get('TEST_MODE'),
+            'access_token': processor_settings['ACCESS_TOKEN'],
+            'base_url': processor_settings['API_URL'],
+            'entity_id': processor_settings['ENTITY_ID'],
+            'test_mode': processor_settings.get('TEST_MODE'),
         }
