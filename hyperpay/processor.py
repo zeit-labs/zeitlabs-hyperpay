@@ -4,7 +4,6 @@ import logging
 from typing import Any, Optional
 from urllib.parse import urljoin
 
-from django.conf import settings
 from django.http import HttpRequest
 from django.middleware.csrf import get_token
 from django.urls import reverse
@@ -44,7 +43,7 @@ class HyperPay(BaseProcessor):
             test_mode=self.processor_settings.get('test_mode'),
             slug=self.SLUG
         )
-        self.payment_url = f"{settings.HYPERPAY_SETTINGS['API_URL']}/v1/paymentWidgets.js"
+        self.payment_url = self.processor_settings['payment_url']
         self.return_url = urljoin(zeitlabs_payments_settings().root_url, reverse("hyperpay:return"))
 
     def get_processor_settings(self) -> dict:  # pylint: disable=self-use-argument
@@ -55,6 +54,7 @@ class HyperPay(BaseProcessor):
             'base_url': processor_settings['API_URL'],
             'entity_id': processor_settings['ENTITY_ID'],
             'test_mode': processor_settings.get('TEST_MODE'),
+            'payment_url': f'{processor_settings["API_URL"]}/v1/paymentWidgets.js',
         }
 
     @property
@@ -128,4 +128,5 @@ class HyperPayMada(HyperPay):
             'base_url': processor_settings['API_URL'],
             'entity_id': processor_settings['ENTITY_ID'],
             'test_mode': processor_settings.get('TEST_MODE'),
+            'payment_url': f'{processor_settings["API_URL"]}/v1/paymentWidgets.js',
         }

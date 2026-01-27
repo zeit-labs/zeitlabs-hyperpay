@@ -15,11 +15,11 @@
 
 <meta http-equiv="Content-Security-Policy"
       content="
-        style-src 'self' https://eu-test.oppwa.com 'unsafe-inline';
-        frame-src 'self' https://eu-test.oppwa.com;
-        script-src 'self' https://eu-test.oppwa.com 'nonce-{{ transaction_parameters.nonce_id }}';
-        connect-src 'self' https://eu-test.oppwa.com;
-        img-src 'self' https://eu-test.oppwa.com;">
+        style-src 'self' {{ transaction_parameters.base_url }} 'unsafe-inline';
+        frame-src 'self' {{ transaction_parameters.base_url }};
+        script-src 'self' {{ transaction_parameters.base_url }} 'nonce-{{ transaction_parameters.nonce_id }}';
+        connect-src 'self' {{ transaction_parameters.base_url }};
+        img-src 'self' {{ transaction_parameters.base_url }};">
 
 <script
     src="{{ transaction_parameters.payment_page_url }}"
