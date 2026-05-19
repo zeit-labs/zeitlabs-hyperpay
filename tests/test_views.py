@@ -107,9 +107,12 @@ class HyperPayStatusViewTest(TestCase):
     @patch("hyperpay.client.HyperPayClient.get_checkout_status")
     def test_get_success_for_checkout_status_exception(self, mock_client_checkout_status):
         self.client.force_login(self.user)
-        mock_client_checkout_status.side_effect = HyperPayException('Some error - maybe API returned 400')
+        exc_msg = 'Some error - maybe API returned 400'
+        mock_client_checkout_status.side_effect = HyperPayException(exc_msg)
         response = self.client.get(f'{self.url}?merchant_reference=1122')
-        self.assertTemplateUsed(response, 'zeitlabs_payments/payment_error.html')
+        assert response.json()['error'] == (
+            f'Unable to verify checkout status from HyperPay with given checkout_id: 1122 - {exc_msg}'
+        )
 
     @pytest.mark.django_db
     @patch("hyperpay.client.requests.get")
@@ -160,8 +163,10 @@ class HyperPayStatusViewTest(TestCase):
         mock_response.status_code = 200
         mock_get.return_value = mock_response
         response = self.client.get(f'{self.url}?merchant_reference=1122')
-        assert response.status_code == 200
-        self.assertTemplateUsed(response, 'zeitlabs_payments/payment_error.html')
+        assert response.status_code == 400
+        assert response.json()['error'] == (
+            'Payment is successful but unable to update records due to format check failure.'
+        )
 
     @pytest.mark.django_db
     @patch("hyperpay.client.HyperPayClient.get_checkout_status")
@@ -206,14 +211,20 @@ class HyperPayStatusViewTest(TestCase):
     @patch("hyperpay.client.HyperPayClient.get_checkout_status")
     def test_get_for_invalid_hyperpay_checkout_response(self, mock_checkout_status):
         self.client.force_login(self.user)
+        invalid_site_id = 1111
         mock_checkout_status.return_value = {
             'invalid_field_in_response': 'response format is not right.',
-            'merchantTransactionId': f'0011-{self.processing_cart.id}',
+            'merchantTransactionId': f'{invalid_site_id}-{self.processing_cart.id}',
             'result': {'code': '000.100.110', 'description': 'success repsonse'},
             'id': '11223344'
         }
         response = self.client.get(f'{self.url}?merchant_reference=1122')
-        self.assertTemplateUsed(response, 'zeitlabs_payments/payment_error.html')
+        assert response.status_code == 400
+        assert response.json()['error'] == (
+            'Unable to process payment because we could not identify the related cart or site '
+            f'for merchantTransactionId: {invalid_site_id}-1. '
+            'Cart: Cart #1 - test-user (processing), Site: None.'
+        )
 
     @pytest.mark.django_db
     @patch("hyperpay.client.requests.get")
@@ -231,14 +242,21 @@ class HyperPayStatusViewTest(TestCase):
         assert response.status_code == 200
 
         self.processing_cart.refresh_from_db()
-        self.assertTemplateUsed(response, 'zeitlabs_payments/payment_successful.html')
+        assert response.json()['msg'] == (
+            'Payment was successful but unable to update enrollment record in db, '
+            'please check audit logs for the cart: 1'
+        )
 
     @pytest.mark.django_db
     @patch("hyperpay.client.HyperPayClient.get_checkout_status")
     def test_get_success_payment_with_invalid_merchant_ref(self, mock_checkout_status):
         self.client.force_login(self.user)
         response_data = deepcopy(self.response_template)
-        response_data['merchantTransactionId'] = '11-invalid'
+        response_data['merchantTransactionId'] = '1-invalid'
         mock_checkout_status.return_value = response_data
         response = self.client.get(f'{self.url}?merchant_reference=1122')
-        self.assertTemplateUsed(response, 'zeitlabs_payments/payment_error.html')
+        assert response.status_code == 400
+        assert response.json()['error'] == (
+            'Unable to process payment because we could not identify the related cart or site for '
+            'merchantTransactionId: 1-invalid. Cart: None, Site: example.com.'
+        )
