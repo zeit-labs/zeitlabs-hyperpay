@@ -88,17 +88,26 @@ class HyperPayStatusView(LoginRequiredMixin, HyperPayBaseView):
             cart = self.payment_processor.get_cart_from_reference(data['merchantTransactionId'])
             site = self.payment_processor.get_site_from_reference(data['merchantTransactionId'])
             if not cart or not site:
-                return render(request, 'zeitlabs_payments/payment_error.html')
-
+                return JsonResponse(
+                    data={
+                        'error': (
+                            f'Unable to process payment because we could not identify the related cart or site '
+                            f'for merchantTransactionId: {data["merchantTransactionId"]}. '
+                            f'Cart: {cart}, Site: {site}.'
+                        )
+                    },
+                    status=400
+                )
             if cart.status == Cart.Status.PROCESSING:
                 cart.status = Cart.Status.PAYMENT_PENDING
                 cart.save(update_fields=['status'])
         except HyperPayException as exc:
-            logger.exception(
-                f'Unable to verify checkout status from HyperPay with given checkout_id: {checkout_id} - {exc}'
+            msg = f'Unable to verify checkout status from HyperPay with given checkout_id: {checkout_id} - {exc}'
+            logger.exception(msg)
+            return JsonResponse(
+                data={'error': msg},
+                status=400
             )
-            return render(request, 'zeitlabs_payments/payment_error.html')
-
         status = self.payment_processor.client.verify_status(data)
         if status == PaymentStatus.FAILURE:
             logger.exception(
@@ -112,13 +121,17 @@ class HyperPayStatusView(LoginRequiredMixin, HyperPayBaseView):
                         'Your payment was declined. No charges were made. '
                         'You may try again or use a different payment method.'
                     )
-                }, status=400)
+                }, status=400
+            )
         elif status == PaymentStatus.SUCCESS:
             try:
                 verify_success_response_with_cart(data, cart)
             except HyperPayException:
                 logger.exception('Hyperpay Error - Success response format check failed.')
-                return render(request, 'zeitlabs_payments/payment_error.html')
+                return JsonResponse(
+                    {'error': ('Payment is successful but unable to update records due to format check failure.')},
+                    status=400
+                )
 
             invoice = self.payment_processor.process_payment_and_update_records(
                 cart=cart,
@@ -141,11 +154,14 @@ class HyperPayStatusView(LoginRequiredMixin, HyperPayBaseView):
                         args=[invoice.invoice_number]
                     )
                 }, status=200)
-            logger.exception(
+            msg = (
                 'Payment was successful but unable to update enrollment record in db,'
                 f' please check audit logs for the cart: {cart.id}'
             )
-            return render(request, 'zeitlabs_payments/payment_successful.html')
+            logger.exception(msg)
+            return JsonResponse({
+                'msg': msg
+            }, status=200)
         else:
             return JsonResponse(
                 data={'error': 'Payment status is still pending on Hyperpay.'},
