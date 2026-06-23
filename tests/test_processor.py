@@ -46,7 +46,9 @@ class TestHyperPayProcessor(TestCase):
     def test_init_sets_attributes(self, mock_reverse, mock_get_value):
         """Test Hyperpay __init__ properly sets attributes from settings and URL helpers."""
         mock_reverse.return_value = '/hyperpay/return/'
-        mock_get_value.return_value = MagicMock(root_url='https://lms.example.com')
+        mock_settings_instance = MagicMock(root_url='https://lms.example.com')
+        mock_settings_instance.get_by_root_key.return_value = settings.HYPERPAY_SETTINGS
+        mock_get_value.return_value = mock_settings_instance
         processor = HyperPay()
         assert processor.client.base_url == 'https://test-fake-api.nelc.gov.sa'
         assert processor.client.slug == 'hyperpay'
