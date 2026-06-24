@@ -35,7 +35,7 @@ class HyperPayClient:
     PENDING_CHANGEABLE_SOON_CODES_REGEX = re.compile(r'^(000\.200)')
     PENDING_NOT_CHANGEABLE_SOON_CODES_REGEX = re.compile(r'^(800\.400\.5|100\.400\.500)')
 
-    def __init__(  # pylint: disable=too-many-positional-arguments
+    def __init__(
             self, access_token: str, base_url: str, entity_id: str, slug: str, test_mode: str = None
     ) -> None:
         """Initialize client."""

@@ -9,7 +9,7 @@ from django.http import HttpRequest
 from django.test import TestCase
 from zeitlabs_payments.models import AuditLog, Cart, CatalogueItem
 
-from hyperpay.processor import HyperPay, HyperPayMada
+from hyperpay.processor import HyperPay, HyperPayMada, empty_hyperpay_settings
 
 User = get_user_model()
 
@@ -66,6 +66,17 @@ class TestHyperPayProcessor(TestCase):
         assert 'checkout_text' in result
         assert 'url' in result
         assert str(self.cart.id) in result['url']
+        assert result['disabled'] is False
+
+    @patch('hyperpay.processor.zeitlabs_payments_settings')
+    def test_get_payment_method_metadata_disabled(self, mock_get_value):
+        """Verify that get_payment_method_metadata returns sets the processor as disabled when no settings available."""
+        mock_settings_instance = MagicMock(root_url='https://lms.example.com')
+        mock_settings_instance.get_by_root_key.return_value = empty_hyperpay_settings
+        mock_get_value.return_value = mock_settings_instance
+        result = HyperPay.get_payment_method_metadata(self.cart)
+        assert result['slug'] == HyperPay.SLUG
+        assert result['disabled'] is True
 
     @patch("hyperpay.processor.get_token", return_value="csrf123")
     @patch("hyperpay.processor.HyperPayClient")

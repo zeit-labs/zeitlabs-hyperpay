@@ -46,7 +46,8 @@ class HyperPay(BaseProcessor):
         self.payment_url = self.processor_settings['payment_url']
         self.return_url = urljoin(zeitlabs_payments_settings().root_url, reverse("hyperpay:return"))
 
-    def get_processor_settings(self) -> dict:  # pylint: disable=self-use-argument
+    @classmethod
+    def get_processor_settings(cls) -> dict:
         """Return processor settings."""
         processor_settings = zeitlabs_payments_settings().get_by_root_key('HYPERPAY_SETTINGS', empty_hyperpay_settings)
         return {
@@ -110,6 +111,16 @@ class HyperPay(BaseProcessor):
         )
         return transaction_parameters
 
+    @classmethod
+    def get_payment_method_metadata(cls, cart: Cart) -> dict:
+        """
+        Return metadata for frontend display for this payment processor.
+        :return: Dictionary with 'slug', 'title', and 'url'
+        """
+        result = super().get_payment_method_metadata(cart)
+        result['disabled'] = not cls.get_processor_settings()['access_token']
+        return result
+
 
 class HyperPayMada(HyperPay):
     """HyperPay Mada processor."""
@@ -118,7 +129,8 @@ class HyperPayMada(HyperPay):
     NAME = 'HyperPay Mada'
     BRANDS = 'MADA'
 
-    def get_processor_settings(self) -> dict:  # pylint: disable=self-use-argument
+    @classmethod
+    def get_processor_settings(cls) -> dict:
         """Return processor settings."""
         processor_settings = zeitlabs_payments_settings().get_by_root_key(
             'HYPERPAY_MADA_SETTINGS', empty_hyperpay_settings,
