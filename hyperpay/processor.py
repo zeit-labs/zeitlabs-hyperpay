@@ -49,7 +49,9 @@ class HyperPay(BaseProcessor):
     @classmethod
     def get_processor_settings(cls) -> dict:
         """Return processor settings."""
-        processor_settings = zeitlabs_payments_settings().get_by_root_key('HYPERPAY_SETTINGS', empty_hyperpay_settings)
+        processor_settings = zeitlabs_payments_settings().get_by_root_key(
+            'HYPERPAY_SETTINGS',
+        ) or empty_hyperpay_settings
         return {
             'access_token': processor_settings['ACCESS_TOKEN'],
             'base_url': processor_settings['API_URL'],
@@ -133,8 +135,8 @@ class HyperPayMada(HyperPay):
     def get_processor_settings(cls) -> dict:
         """Return processor settings."""
         processor_settings = zeitlabs_payments_settings().get_by_root_key(
-            'HYPERPAY_MADA_SETTINGS', empty_hyperpay_settings,
-        )
+            'HYPERPAY_MADA_SETTINGS',
+        ) or empty_hyperpay_settings
         return {
             'access_token': processor_settings['ACCESS_TOKEN'],
             'base_url': processor_settings['API_URL'],
