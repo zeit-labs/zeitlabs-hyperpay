@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1a\n"
-"Report-Msgid-Bugs-To: openedx-translation@googlegroups.com\n"
-"POT-Creation-Date: 2023-06-13 08:00+0000\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-08 07:59+0300\n"
 "PO-Revision-Date: 2023-06-13 09:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: openedx-translation <openedx-translation@googlegroups.com>\n"
@@ -17,14 +17,26 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: processor.py:26
+#: processor.py:31
 msgid "Checkout with HyperPay Credit Card"
 msgstr ""
 
-#: processor.py:98
+#: processor.py:130
 msgid "Checkout with HyperPay Mada"
 msgstr ""
 
-#: templates/hyperpay/hyperpay.html:13
-msgid "Payment"
+#: templates/hyperpay/hyperpay.html:220
+msgid "Back"
+msgstr ""
+
+#: templates/hyperpay/hyperpay.html:223
+msgid "Card Payment"
+msgstr ""
+
+#: templates/hyperpay/hyperpay.html:226
+msgid "Secure"
+msgstr ""
+
+#: templates/hyperpay/hyperpay.html:241
+msgid "Your payment is processed securely by HyperPay"
 msgstr ""
