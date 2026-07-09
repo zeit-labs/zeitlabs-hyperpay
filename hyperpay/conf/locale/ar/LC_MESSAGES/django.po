@@ -30,10 +30,8 @@ msgid "Back"
 msgstr "الرجوع"
 
 #: templates/hyperpay/hyperpay.html:223
-#, fuzzy
-#| msgid "Payment"
 msgid "Card Payment"
-msgstr "الدفع"
+msgstr "الدفع بالبطاقة"
 
 #: templates/hyperpay/hyperpay.html:226
 msgid "Secure"
