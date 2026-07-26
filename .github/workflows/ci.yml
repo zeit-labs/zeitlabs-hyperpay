@@ -21,9 +21,9 @@ jobs:
       - name: Checkout current repo
         uses: actions/checkout@v7
 
-      - name: Clone zeitlabs-payments
+      - name: Clone openedx-zeitlabs-payments
         run: |
-          git clone --branch main --single-branch https://github.com/zeit-labs/zeitlabs-payments.git ../zeitlabs-payments
+          git clone --branch main --single-branch https://github.com/zeit-labs/openedx-zeitlabs-payments.git ../openedx-zeitlabs-payments
 
       - name: Set up Python
         uses: actions/setup-python@v7
