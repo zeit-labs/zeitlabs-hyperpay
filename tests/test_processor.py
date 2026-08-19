@@ -66,17 +66,20 @@ class TestHyperPayProcessor(TestCase):
         assert 'checkout_text' in result
         assert 'url' in result
         assert str(self.cart.id) in result['url']
-        assert result['disabled'] is False
+
+    def test_is_hidden_for_returns_false_when_configured(self):
+        """Verify that HyperPay is offered when it has an access_token for the site."""
+        request = MagicMock(spec=HttpRequest)
+        assert HyperPay().is_hidden_for(request) is False
 
     @patch('hyperpay.processor.zeitlabs_payments_settings')
-    def test_get_payment_method_metadata_disabled(self, mock_get_value):
-        """Verify that get_payment_method_metadata returns sets the processor as disabled when no settings available."""
+    def test_is_hidden_for_returns_true_when_unconfigured(self, mock_get_value):
+        """Verify that HyperPay hides itself when no settings are available for the site."""
         mock_settings_instance = MagicMock(root_url='https://lms.example.com')
         mock_settings_instance.get_by_root_key.return_value = empty_hyperpay_settings
         mock_get_value.return_value = mock_settings_instance
-        result = HyperPay.get_payment_method_metadata(self.cart)
-        assert result['slug'] == HyperPay.SLUG
-        assert result['disabled'] is True
+        request = MagicMock(spec=HttpRequest)
+        assert HyperPay().is_hidden_for(request) is True
 
     @patch("hyperpay.processor.get_token", return_value="csrf123")
     @patch("hyperpay.processor.HyperPayClient")
@@ -101,14 +104,42 @@ class TestHyperPayProcessor(TestCase):
 
         mock_client_instance.create_checkout.assert_called_once()
         payload = mock_client_instance.create_checkout.call_args[0][0]
-        assert payload["amount"] == str(self.cart.total)
+        assert payload["amount"] == '1000.00', 'Amount is the .2f-formatted total; F5-B removes the formatter'
         assert "merchantTransactionId" in payload
         assert payload["customer.email"] == self.user.email
+        assert payload["cart.items[0].originalPrice"] == '1000.00', \
+            'originalPrice must be formatted to two decimals for the gateway regex'
+        assert payload["cart.items[0].taxAmount"] == '0.00', \
+            'taxAmount must be formatted to two decimals for the gateway regex'
 
         assert result["checkout_id"] == "chk_123"
         assert result["return_url"] == processor.return_url
         assert result["payment_page_url"].startswith(processor.payment_url)
+        assert result["locale"] == "en"
         assert result["csrfmiddlewaretoken"] == "csrf123"
+
+    @patch("hyperpay.processor.get_token", return_value="csrf123")
+    @patch("hyperpay.processor.HyperPayClient")
+    @patch('zeitlabs_payments.helpers.get_course_id')
+    def test_get_transaction_parameters_honours_arabic_language(
+        self,
+        mock_get_course_id,
+        mock_client_class,
+        mock_get_token,  # pylint: disable=unused-argument
+    ):
+        """Verify that an Arabic request reaches the gateway widget with locale 'ar'."""
+        mock_client_instance = MagicMock()
+        mock_client_instance.create_checkout.return_value = {
+            "checkout_id": "chk_456",
+            "result_code": "000.100.110",
+            "result_description": "Request successfully processed"
+        }
+        mock_client_class.return_value = mock_client_instance
+        mock_get_course_id.return_value = 'course-v1:test+1+1'
+        self.fake_request.LANGUAGE_CODE = 'ar'
+        processor = HyperPay()
+        result = processor.get_transaction_parameters(cart=self.cart, request=self.fake_request)
+        assert result["locale"] == "ar"
 
     def test_get_cart_from_reference_success(self):
         reference = f'0011-{self.cart.id}'

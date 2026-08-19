@@ -65,7 +65,7 @@ def test_amount_mismatch(cart):  # pylint: disable=redefined-outer-name
     })
     with pytest.raises(HyperPayException) as exc:
         verify_success_response_with_cart(response, cart)
-    assert str(exc.value) == 'Error comparing cart total in response with cart total: 100.00. Amount received: 200.00'
+    assert str(exc.value) == 'Error comparing cart total in response with cart total: 100.000. Amount received: 200.00'
 
 
 @pytest.mark.django_db

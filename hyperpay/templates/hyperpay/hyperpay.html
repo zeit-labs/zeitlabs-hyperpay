@@ -234,7 +234,7 @@
             <form action="{{ transaction_parameters.return_url }}"
                   class="paymentWidgets"
                   data-brands="{{ transaction_parameters.brands }}">
-                <input type="hidden" name="locale" value="ar" />
+                <input type="hidden" name="locale" value="{{ transaction_parameters.locale }}" />
             </form>
         </div>
     </div>
