@@ -12,7 +12,7 @@ from hyperpay.helpers import MANDATORY_FIELDS, verify_success_response_with_cart
 def cart():
     """create cart."""
     user = get_user_model().objects.create(username='test-user', email='test@example.com')
-    item = CatalogueItem.objects.create(sku='abcd', type='paid_course', price=100)
+    item = CatalogueItem.objects.create(sku='abcd', type='paid_course', price=100, currency='SAR')
     cart_obj = Cart.objects.create(user=user, status=Cart.Status.PROCESSING)
     CartItem.objects.create(
         catalogue_item=item,

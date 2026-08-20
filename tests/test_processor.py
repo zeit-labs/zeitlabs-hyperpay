@@ -41,14 +41,15 @@ class TestHyperPayProcessor(TestCase):
         self.fake_request.site = Site.objects.get(domain='example.com')
         self.fake_request.LANGUAGE_CODE = 'en'
 
+    @patch('zeitlabs_payments.providers.base.get_plugin_settings')
     @patch('hyperpay.processor.zeitlabs_payments_settings')
     @patch('hyperpay.processor.reverse')
-    def test_init_sets_attributes(self, mock_reverse, mock_get_value):
+    def test_init_sets_attributes(self, mock_reverse, mock_get_value, mock_base_settings):
         """Test Hyperpay __init__ properly sets attributes from settings and URL helpers."""
         mock_reverse.return_value = '/hyperpay/return/'
         mock_settings_instance = MagicMock(root_url='https://lms.example.com')
-        mock_settings_instance.get_by_root_key.return_value = settings.HYPERPAY_SETTINGS
         mock_get_value.return_value = mock_settings_instance
+        mock_base_settings.return_value.get_by_root_key.return_value = settings.HYPERPAY_SETTINGS
         processor = HyperPay()
         assert processor.client.base_url == 'https://test-fake-api.nelc.gov.sa'
         assert processor.client.slug == 'hyperpay'
@@ -72,12 +73,13 @@ class TestHyperPayProcessor(TestCase):
         request = MagicMock(spec=HttpRequest)
         assert HyperPay().is_hidden_for(request) is False
 
+    @patch('zeitlabs_payments.providers.base.get_plugin_settings')
     @patch('hyperpay.processor.zeitlabs_payments_settings')
-    def test_is_hidden_for_returns_true_when_unconfigured(self, mock_get_value):
+    def test_is_hidden_for_returns_true_when_unconfigured(self, mock_get_value, mock_base_settings):
         """Verify that HyperPay hides itself when no settings are available for the site."""
         mock_settings_instance = MagicMock(root_url='https://lms.example.com')
-        mock_settings_instance.get_by_root_key.return_value = empty_hyperpay_settings
         mock_get_value.return_value = mock_settings_instance
+        mock_base_settings.return_value.get_by_root_key.return_value = empty_hyperpay_settings
         request = MagicMock(spec=HttpRequest)
         assert HyperPay().is_hidden_for(request) is True
 

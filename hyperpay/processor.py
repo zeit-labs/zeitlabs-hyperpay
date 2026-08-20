@@ -47,12 +47,14 @@ class HyperPay(BaseProcessor):
         self.payment_url = self.processor_settings['payment_url']
         self.return_url = urljoin(zeitlabs_payments_settings().root_url, reverse("hyperpay:return"))
 
-    @classmethod
-    def get_processor_settings(cls) -> dict:
+    @property
+    def processor_settings(self) -> dict:
+        """Return processor settings property."""
+        return self.get_processor_settings()
+
+    def get_processor_settings(self) -> dict:
         """Return processor settings."""
-        processor_settings = zeitlabs_payments_settings().get_by_root_key(
-            cls.SETTINGS_ROOT_KEY,
-        ) or empty_hyperpay_settings
+        processor_settings = self.get_settings() or empty_hyperpay_settings
         return {
             'access_token': processor_settings['ACCESS_TOKEN'],
             'base_url': processor_settings['API_URL'],
@@ -60,11 +62,6 @@ class HyperPay(BaseProcessor):
             'test_mode': processor_settings.get('TEST_MODE'),
             'payment_url': f'{processor_settings["API_URL"]}/v1/paymentWidgets.js',
         }
-
-    @property
-    def processor_settings(self) -> dict:
-        """Return processor settings property."""
-        return self.get_processor_settings()
 
     def get_cart_data(self, cart: Cart) -> dict:
         """
@@ -133,17 +130,3 @@ class HyperPayMada(HyperPay):
     NAME = 'HyperPay Mada'
     BRANDS = 'MADA'
     SETTINGS_ROOT_KEY = 'HYPERPAY_MADA_SETTINGS'
-
-    @classmethod
-    def get_processor_settings(cls) -> dict:
-        """Return processor settings."""
-        processor_settings = zeitlabs_payments_settings().get_by_root_key(
-            cls.SETTINGS_ROOT_KEY,
-        ) or empty_hyperpay_settings
-        return {
-            'access_token': processor_settings['ACCESS_TOKEN'],
-            'base_url': processor_settings['API_URL'],
-            'entity_id': processor_settings['ENTITY_ID'],
-            'test_mode': processor_settings.get('TEST_MODE'),
-            'payment_url': f'{processor_settings["API_URL"]}/v1/paymentWidgets.js',
-        }
