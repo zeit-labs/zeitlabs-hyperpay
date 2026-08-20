@@ -35,6 +35,8 @@ class HyperPay(BaseProcessor):
     TEMPLATE_NAME = 'hyperpay/hyperpay.html'
     SETTINGS_ROOT_KEY = 'HYPERPAY_SETTINGS'
 
+    contract_version = 1
+
     def __init__(self) -> None:
         """Initialize the HyperPay processor with client + config."""
         self.client = HyperPayClient(
