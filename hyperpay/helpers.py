@@ -13,6 +13,25 @@ MANDATORY_FIELDS = [
     'merchantTransactionId', 'result'
 ]
 
+#: The gateway price fields accept at most two decimal places.
+GATEWAY_AMOUNT_PRECISION = Decimal('0.01')
+
+
+def format_gateway_amount(amount: Decimal) -> str:
+    """
+    Format a monetary amount for the gateway.
+
+    The amount is returned with exactly two decimal places. Conversion is exact: an amount
+    that cannot be expressed in two decimal places raises instead of rounding, so the value
+    charged is never silently changed.
+    """
+    quantized = amount.quantize(GATEWAY_AMOUNT_PRECISION)
+    if quantized != amount:
+        raise HyperPayException(
+            f'Amount {amount} cannot be expressed in {GATEWAY_AMOUNT_PRECISION} precision without rounding.'
+        )
+    return str(quantized)
+
 
 def verify_success_response_with_cart(response: Dict[str, Any], cart: Cart) -> None:
     """
@@ -28,14 +47,17 @@ def verify_success_response_with_cart(response: Dict[str, Any], cart: Cart) -> N
     amount = response['amount']
     try:
         amount_decimal = Decimal(amount)
-        if cart.total != amount_decimal:
-            raise HyperPayException(
-                f'Cart total ({cart.total}) does not match response amount ({amount_decimal})'
-            )
-    except (InvalidOperation, Exception) as exc:
+    except InvalidOperation as exc:
         raise HyperPayException(
-            f'Error comparing cart total in response with cart total: {cart.total}. Amount received: {amount}'
+            f'Error comparing amount with the transmitted amount: {format_gateway_amount(cart.total)}. '
+            f'Amount received: {amount}'
         ) from exc
+
+    transmitted_amount = Decimal(format_gateway_amount(cart.total))
+    if transmitted_amount != amount_decimal:
+        raise HyperPayException(
+            f'Transmitted amount ({transmitted_amount}) does not match response amount ({amount_decimal})'
+        )
 
     if response['currency'] != zeitlabs_payments_settings().valid_currency:
         raise HyperPayException(f"Invalid currency: {response['currency']}")

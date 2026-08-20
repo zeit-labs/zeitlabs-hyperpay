@@ -1,4 +1,7 @@
 """Hyperpay processor tests."""
+import io
+import os
+from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,6 +12,7 @@ from django.http import HttpRequest
 from django.test import TestCase
 from zeitlabs_payments.models import AuditLog, Cart, CatalogueItem
 
+from hyperpay.exceptions import HyperPayException
 from hyperpay.processor import HyperPay, HyperPayMada, empty_hyperpay_settings
 
 User = get_user_model()
@@ -106,7 +110,7 @@ class TestHyperPayProcessor(TestCase):
 
         mock_client_instance.create_checkout.assert_called_once()
         payload = mock_client_instance.create_checkout.call_args[0][0]
-        assert payload["amount"] == '1000.00', 'Amount is the .2f-formatted total; F5-B removes the formatter'
+        assert payload["amount"] == '1000.00', 'amount is the exact two-decimal gateway format'
         assert "merchantTransactionId" in payload
         assert payload["customer.email"] == self.user.email
         assert payload["cart.items[0].originalPrice"] == '1000.00', \
@@ -119,6 +123,33 @@ class TestHyperPayProcessor(TestCase):
         assert result["payment_page_url"].startswith(processor.payment_url)
         assert result["locale"] == "en"
         assert result["csrfmiddlewaretoken"] == "csrf123"
+
+    @patch("hyperpay.processor.get_token", return_value="csrf123")
+    @patch("hyperpay.processor.HyperPayClient")
+    @patch('zeitlabs_payments.helpers.get_course_id')
+    def test_get_transaction_parameters_refuses_inexpressible_amount(
+        self,
+        mock_get_course_id,
+        mock_client_class,
+        mock_get_token,  # pylint: disable=unused-argument
+    ):
+        """Verify that a total that cannot be expressed in two decimals is refused at payload build."""
+        self.cart.items.all().update(final_price=Decimal('100.005'))
+        mock_client_class.return_value = MagicMock()
+        mock_get_course_id.return_value = 'course-v1:test+1+1'
+        processor = HyperPay()
+        with pytest.raises(HyperPayException, match='cannot be expressed in 0.01 precision'):
+            processor.get_transaction_parameters(cart=self.cart, request=self.fake_request)
+
+    def test_payment_template_has_no_inert_meta_csp(self):
+        """Verify that the payment page no longer emits the inert meta Content-Security-Policy."""
+        template_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'hyperpay', 'templates', 'hyperpay', 'hyperpay.html',
+        )
+        with io.open(template_path, encoding='utf8') as template_file:
+            content = template_file.read()
+        assert 'Content-Security-Policy' not in content
 
     @patch("hyperpay.processor.get_token", return_value="csrf123")
     @patch("hyperpay.processor.HyperPayClient")

@@ -1,11 +1,13 @@
 """Test helpers method."""
+from decimal import Decimal
+
 import pytest
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from zeitlabs_payments.models import Cart, CartItem, CatalogueItem
 
 from hyperpay.exceptions import HyperPayException
-from hyperpay.helpers import MANDATORY_FIELDS, verify_success_response_with_cart
+from hyperpay.helpers import MANDATORY_FIELDS, format_gateway_amount, verify_success_response_with_cart
 
 
 @pytest.fixture
@@ -65,7 +67,15 @@ def test_amount_mismatch(cart):  # pylint: disable=redefined-outer-name
     })
     with pytest.raises(HyperPayException) as exc:
         verify_success_response_with_cart(response, cart)
-    assert str(exc.value) == 'Error comparing cart total in response with cart total: 100.000. Amount received: 200.00'
+    assert str(exc.value) == 'Transmitted amount (100.00) does not match response amount (200.00)'
+
+
+@pytest.mark.django_db
+def test_amount_three_decimal_fraction_raises_refusal(cart):  # pylint: disable=redefined-outer-name
+    """Verify that a total that cannot be expressed in two decimals is refused, not rounded."""
+    cart.items.all().update(final_price=Decimal('100.005'))
+    with pytest.raises(HyperPayException, match='cannot be expressed in 0.01 precision'):
+        format_gateway_amount(cart.total)
 
 
 @pytest.mark.django_db
