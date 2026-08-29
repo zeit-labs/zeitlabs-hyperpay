@@ -184,14 +184,6 @@
     }
 </style>
 
-<meta http-equiv="Content-Security-Policy"
-      content="
-        style-src 'self' {{ transaction_parameters.base_url }} 'unsafe-inline';
-        frame-src 'self' {{ transaction_parameters.base_url }};
-        script-src 'self' {{ transaction_parameters.base_url }} 'nonce-{{ transaction_parameters.nonce_id }}';
-        connect-src 'self' {{ transaction_parameters.base_url }};
-        img-src 'self' {{ transaction_parameters.base_url }};">
-
 <script
     src="{{ transaction_parameters.payment_page_url }}"
     integrity="{{ transaction_parameters.integrity }}"

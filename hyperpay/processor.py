@@ -13,6 +13,7 @@ from zeitlabs_payments.models import Cart
 from zeitlabs_payments.providers.base import BaseProcessor
 
 from hyperpay.client import HyperPayClient
+from hyperpay.helpers import format_gateway_amount
 
 logger = logging.getLogger(__name__)
 empty_hyperpay_settings = {
@@ -69,10 +70,8 @@ class HyperPay(BaseProcessor):
         """
         Return cart items details.
 
-        The gateway amount fields accept at most two decimal places, so
-        ``originalPrice`` and ``taxAmount`` are formatted explicitly instead of
-        inheriting the widened DECIMAL(12,3) column scale. The F5-B amount
-        contract will replace this with currency-exponent-aware formatting.
+        The gateway price fields accept at most two decimal places, so each monetary
+        value is formatted exactly and refused if it cannot be expressed in two decimals.
         """
         data = {}
         index = 0
@@ -82,8 +81,8 @@ class HyperPay(BaseProcessor):
                 f'cart.items[{index}].description': item.catalogue_item.description,
                 f'cart.items[{index}].currency': item.catalogue_item.currency,
                 f'cart.items[{index}].sku': item.catalogue_item.sku,
-                f'cart.items[{index}].originalPrice': f'{item.original_price:.2f}',
-                f'cart.items[{index}].taxAmount': f'{item.tax_amount:.2f}',
+                f'cart.items[{index}].originalPrice': format_gateway_amount(item.original_price),
+                f'cart.items[{index}].taxAmount': format_gateway_amount(item.tax_amount),
             })
             index += 1
         return data
@@ -101,7 +100,7 @@ class HyperPay(BaseProcessor):
         base_params = super().get_transaction_parameters_base(cart, request)
         checkout_payload = {
             'customer.email': base_params['user_email'],
-            'amount': f"{base_params['amount']:.2f}",
+            'amount': format_gateway_amount(base_params['amount']),
             'currency': str(base_params['currency']),
             'merchantTransactionId': base_params['order_reference'].zfill(8)
         }
