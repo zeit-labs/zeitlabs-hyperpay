@@ -33,6 +33,7 @@ class HyperPay(BaseProcessor):
     BRANDS = 'VISA MASTER'
 
     TEMPLATE_NAME = 'hyperpay/hyperpay.html'
+    SETTINGS_ROOT_KEY = 'HYPERPAY_SETTINGS'
 
     def __init__(self) -> None:
         """Initialize the HyperPay processor with client + config."""
@@ -46,12 +47,14 @@ class HyperPay(BaseProcessor):
         self.payment_url = self.processor_settings['payment_url']
         self.return_url = urljoin(zeitlabs_payments_settings().root_url, reverse("hyperpay:return"))
 
-    @classmethod
-    def get_processor_settings(cls) -> dict:
+    @property
+    def processor_settings(self) -> dict:
+        """Return processor settings property."""
+        return self.get_processor_settings()
+
+    def get_processor_settings(self) -> dict:
         """Return processor settings."""
-        processor_settings = zeitlabs_payments_settings().get_by_root_key(
-            'HYPERPAY_SETTINGS',
-        ) or empty_hyperpay_settings
+        processor_settings = self.get_settings() or empty_hyperpay_settings
         return {
             'access_token': processor_settings['ACCESS_TOKEN'],
             'base_url': processor_settings['API_URL'],
@@ -60,13 +63,15 @@ class HyperPay(BaseProcessor):
             'payment_url': f'{processor_settings["API_URL"]}/v1/paymentWidgets.js',
         }
 
-    @property
-    def processor_settings(self) -> dict:
-        """Return processor settings property."""
-        return self.get_processor_settings()
-
     def get_cart_data(self, cart: Cart) -> dict:
-        """Return cart items details."""
+        """
+        Return cart items details.
+
+        The gateway amount fields accept at most two decimal places, so
+        ``originalPrice`` and ``taxAmount`` are formatted explicitly instead of
+        inheriting the widened DECIMAL(12,3) column scale. The F5-B amount
+        contract will replace this with currency-exponent-aware formatting.
+        """
         data = {}
         index = 0
         for item in cart.items.all():
@@ -75,8 +80,8 @@ class HyperPay(BaseProcessor):
                 f'cart.items[{index}].description': item.catalogue_item.description,
                 f'cart.items[{index}].currency': item.catalogue_item.currency,
                 f'cart.items[{index}].sku': item.catalogue_item.sku,
-                f'cart.items[{index}].originalPrice': item.original_price,
-                f'cart.items[{index}].taxAmount': item.tax_amount,
+                f'cart.items[{index}].originalPrice': f'{item.original_price:.2f}',
+                f'cart.items[{index}].taxAmount': f'{item.tax_amount:.2f}',
             })
             index += 1
         return data
@@ -108,20 +113,14 @@ class HyperPay(BaseProcessor):
                 'payment_page_url': f'{self.payment_url}?checkoutId={checkout_id}',
                 'csrfmiddlewaretoken': get_token(request),
                 'brands': self.BRANDS,
-                'locale': request.LANGUAGE_CODE if request else 'en',
+                'locale': base_params['language'],
             }
         )
         return transaction_parameters
 
-    @classmethod
-    def get_payment_method_metadata(cls, cart: Cart) -> dict:
-        """
-        Return metadata for frontend display for this payment processor.
-        :return: Dictionary with 'slug', 'title', and 'url'
-        """
-        result = super().get_payment_method_metadata(cart)
-        result['disabled'] = not cls.get_processor_settings()['access_token']
-        return result
+    def is_hidden_for(self, request: HttpRequest) -> bool:
+        """Return True when HyperPay is not configured for the current site."""
+        return not self.processor_settings['access_token']
 
 
 class HyperPayMada(HyperPay):
@@ -130,17 +129,4 @@ class HyperPayMada(HyperPay):
     CHECKOUT_TEXT = _('Checkout with HyperPay Mada')
     NAME = 'HyperPay Mada'
     BRANDS = 'MADA'
-
-    @classmethod
-    def get_processor_settings(cls) -> dict:
-        """Return processor settings."""
-        processor_settings = zeitlabs_payments_settings().get_by_root_key(
-            'HYPERPAY_MADA_SETTINGS',
-        ) or empty_hyperpay_settings
-        return {
-            'access_token': processor_settings['ACCESS_TOKEN'],
-            'base_url': processor_settings['API_URL'],
-            'entity_id': processor_settings['ENTITY_ID'],
-            'test_mode': processor_settings.get('TEST_MODE'),
-            'payment_url': f'{processor_settings["API_URL"]}/v1/paymentWidgets.js',
-        }
+    SETTINGS_ROOT_KEY = 'HYPERPAY_MADA_SETTINGS'

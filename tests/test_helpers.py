@@ -12,7 +12,7 @@ from hyperpay.helpers import MANDATORY_FIELDS, verify_success_response_with_cart
 def cart():
     """create cart."""
     user = get_user_model().objects.create(username='test-user', email='test@example.com')
-    item = CatalogueItem.objects.create(sku='abcd', type='paid_course', price=100)
+    item = CatalogueItem.objects.create(sku='abcd', type='paid_course', price=100, currency='SAR')
     cart_obj = Cart.objects.create(user=user, status=Cart.Status.PROCESSING)
     CartItem.objects.create(
         catalogue_item=item,
@@ -65,7 +65,7 @@ def test_amount_mismatch(cart):  # pylint: disable=redefined-outer-name
     })
     with pytest.raises(HyperPayException) as exc:
         verify_success_response_with_cart(response, cart)
-    assert str(exc.value) == 'Error comparing cart total in response with cart total: 100.00. Amount received: 200.00'
+    assert str(exc.value) == 'Error comparing cart total in response with cart total: 100.000. Amount received: 200.00'
 
 
 @pytest.mark.django_db
